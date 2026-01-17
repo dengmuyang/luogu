@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         洛谷全站深色模式 (强力覆盖版)
+// @name         洛谷局部深色主题 (保留原版导航栏)
 // @namespace    https://github.com/dengmuyang/luogu
-// @version      1.3.0
-// @description  采用滤镜技术实现 100% 覆盖，针对题目描述、代码编辑器进行专项优化
+// @version      1.4.0
+// @description  仅将内容区、题目区变为深色，保留顶部和侧边栏原色
 // @author       dengmuyang
 // @match        *://www.luogu.com.cn/*
 // @grant        none
@@ -12,81 +12,102 @@
 (function() {
     'use strict';
 
-    const styleId = 'luogu-mega-dark-theme';
-
-    // 核心样式：使用 CSS Filter 翻转色调，再翻转回来以保持图片和颜色正常
+    const styleId = 'luogu-local-dark-theme';
+    
+    // 专门针对内容区的 CSS
     const css = `
-        /* 1. 核心逻辑：翻转整个 HTML 的颜色 */
-        html.luogu-dark-mode {
-            filter: invert(0.9) hue-rotate(180deg) !important;
-            background-color: #fff !important;
+        /* 1. 背景适配：排除掉 Header 和 Sidenav */
+        body, 
+        .lfe-body:not(.main-container), 
+        #app > .main-container > main {
+            background-color: #0f172a !important;
         }
 
-        /* 2. 反翻转：恢复图片、视频、图表、代码编辑器和特殊元素的原始颜色 */
-        html.luogu-dark-mode img,
-        html.luogu-dark-mode video,
-        html.luogu-dark-mode .am-badge,
-        html.luogu-dark-mode .lg-fg-bluelight,
-        html.luogu-dark-mode .lg-fg-green,
-        html.luogu-dark-mode .lg-fg-purple,
-        html.luogu-dark-mode [class*="tag"],
-        html.luogu-dark-mode .color-default,
-        html.luogu-dark-mode .monaco-editor, 
-        html.luogu-dark-mode .katex {
-            filter: invert(1) hue-rotate(180deg) !important;
+        /* 2. 内容卡片与题目容器 */
+        .card, .am-panel, .lg-article, 
+        section.padding-default, 
+        .item-container,
+        .problem-content-container,
+        .content-card {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
         }
 
-        /* 3. 修正题目页面的代码块背景，避免对比度太低 */
-        html.luogu-dark-mode pre, 
-        html.luogu-dark-mode code {
-            background-color: #f0f0f0 !important;
-            border-radius: 4px;
+        /* 3. 题目页面文字颜色修正 */
+        .problem-content-container *, 
+        .lg-article *, 
+        .marked * {
+            color: #e2e8f0 !important;
         }
 
-        /* 4. 彻底去除滚动条白边 */
-        html.luogu-dark-mode ::-webkit-scrollbar { width: 8px; background: #eee; }
-        html.luogu-dark-mode ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-        
-        /* 按钮修正 */
-        #theme-toggle-btn {
-            filter: invert(1) hue-rotate(180deg) !important;
+        /* 4. 代码块与输入框 */
+        pre, code, .copy-btn {
+            background-color: #0f172a !important;
+            border-color: #334155 !important;
+            color: #60a5fa !important;
+        }
+        input, textarea, .edited-container, .select-container {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #475569 !important;
+        }
+
+        /* 5. 关键：强制保护导航栏和侧边栏不被修改 */
+        #app-header, 
+        .lfe-header, 
+        header,
+        .side-navigation, 
+        nav {
+            background-color: inherit; /* 随洛谷系统设置 */
+            color: inherit;
+        }
+
+        /* 6. 链接颜色适配 */
+        a:not([class*="header"]) {
+            color: #60a5fa !important;
+        }
+
+        /* 7. 讨论区回复框等动态元素 */
+        .reply-container, .comment-item {
+            background-color: #1e293b !important;
+            border-bottom: 1px solid #334155 !important;
         }
     `;
 
-    // 应用主题
     function applyTheme() {
-        document.documentElement.classList.add('luogu-dark-mode');
         if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
             style.id = styleId;
             style.textContent = css;
-            document.documentElement.appendChild(style);
+            (document.head || document.documentElement).appendChild(style);
         }
     }
 
-    // 状态初始化
-    const isDark = (localStorage.getItem('luogu-theme-status') || 'dark') === 'dark';
-    if (isDark) applyTheme();
+    function removeTheme() {
+        const style = document.getElementById(styleId);
+        if (style) style.remove();
+    }
 
-    // 按钮逻辑
+    // 初始化
+    const status = localStorage.getItem('luogu-theme-status') || 'dark';
+    if (status === 'dark') applyTheme();
+
+    // 切换按钮
     function initUI() {
         const btn = document.createElement('div');
-        btn.id = 'theme-toggle-btn';
         btn.innerHTML = localStorage.getItem('luogu-theme-status') === 'light' ? '🌞' : '🌙';
-        
         Object.assign(btn.style, {
-            position: 'fixed', bottom: '30px', left: '30px',
-            width: '45px', height: '45px', borderRadius: '50%',
-            backgroundColor: '#3b82f6', color: 'white', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', zIndex: '999999', fontSize: '24px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+            position: 'fixed', bottom: '20px', left: '20px',
+            width: '40px', height: '40px', background: '#3b82f6',
+            color: 'white', borderRadius: '50%', textAlign: 'center',
+            lineHeight: '40px', cursor: 'pointer', zIndex: '99999'
         });
 
         btn.onclick = () => {
-            const wasDark = document.documentElement.classList.contains('luogu-dark-mode');
-            if (wasDark) {
-                document.documentElement.classList.remove('luogu-dark-mode');
+            const current = localStorage.getItem('luogu-theme-status') || 'dark';
+            if (current === 'dark') {
+                removeTheme();
                 localStorage.setItem('luogu-theme-status', 'light');
                 btn.innerHTML = '🌞';
             } else {
@@ -100,5 +121,4 @@
 
     if (document.readyState === 'complete') initUI();
     else document.addEventListener('DOMContentLoaded', initUI);
-
 })();
