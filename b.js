@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         洛谷全站深色主题 (精简增强版)
+// @name         洛谷全站深色模式 (强力覆盖版)
 // @namespace    https://github.com/dengmuyang/luogu
-// @version      1.2.0
-// @description  全站适配，包含题目页、讨论区，支持即时切换
+// @version      1.3.0
+// @description  采用滤镜技术实现 100% 覆盖，针对题目描述、代码编辑器进行专项优化
 // @author       dengmuyang
-// @match        https://www.luogu.com.cn/*
+// @match        *://www.luogu.com.cn/*
 // @grant        none
 // @run-at       document-start
 // ==/UserScript==
@@ -12,95 +12,81 @@
 (function() {
     'use strict';
 
-    const styleId = 'luogu-custom-dark-theme';
-    
-    // 核心 CSS 样式
+    const styleId = 'luogu-mega-dark-theme';
+
+    // 核心样式：使用 CSS Filter 翻转色调，再翻转回来以保持图片和颜色正常
     const css = `
-        /* 全局背景与文字颜色 */
-        html, body, .lfe-body, .main-container { 
-            background-color: #0f172a !important; 
-            color: #e2e8f0 !important; 
+        /* 1. 核心逻辑：翻转整个 HTML 的颜色 */
+        html.luogu-dark-mode {
+            filter: invert(0.9) hue-rotate(180deg) !important;
+            background-color: #fff !important;
         }
 
-        /* 题目描述区域、卡片、面板 */
-        .card, .am-panel, .lg-article, .md-inline-block, .padding-default {
-            background-color: #1e293b !important;
-            border: 1px solid #334155 !important;
-            color: #e2e8f0 !important;
+        /* 2. 反翻转：恢复图片、视频、图表、代码编辑器和特殊元素的原始颜色 */
+        html.luogu-dark-mode img,
+        html.luogu-dark-mode video,
+        html.luogu-dark-mode .am-badge,
+        html.luogu-dark-mode .lg-fg-bluelight,
+        html.luogu-dark-mode .lg-fg-green,
+        html.luogu-dark-mode .lg-fg-purple,
+        html.luogu-dark-mode [class*="tag"],
+        html.luogu-dark-mode .color-default,
+        html.luogu-dark-mode .monaco-editor, 
+        html.luogu-dark-mode .katex {
+            filter: invert(1) hue-rotate(180deg) !important;
         }
 
-        /* 题目内容中的特定颜色修复 (Markdown 渲染区) */
-        .lg-article h1, .lg-article h2, .lg-article h3, .lg-article p {
-            color: #e2e8f0 !important;
+        /* 3. 修正题目页面的代码块背景，避免对比度太低 */
+        html.luogu-dark-mode pre, 
+        html.luogu-dark-mode code {
+            background-color: #f0f0f0 !important;
+            border-radius: 4px;
         }
 
-        /* 侧边栏与头部 */
-        .lfe-header, #app-header, .side-navigation {
-            background-color: #1e293b !important;
-            border-bottom: 1px solid #334155 !important;
-        }
-
-        /* 输入框与编辑器占位 */
-        input, textarea, .edited-container {
-            background-color: #0f172a !important;
-            color: #f1f5f9 !important;
-            border: 1px solid #475569 !important;
-        }
-
-        /* 代码块适配 */
-        pre, code {
-            background-color: #1e293b !important;
-            border: 1px solid #475569 !important;
-        }
-
-        /* 强制隐藏原本的白底 */
-        section { background-color: transparent !important; }
+        /* 4. 彻底去除滚动条白边 */
+        html.luogu-dark-mode ::-webkit-scrollbar { width: 8px; background: #eee; }
+        html.luogu-dark-mode ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
         
-        /* 针对题目页面的特殊适配：通过特定类名强制覆盖 */
-        .marked, .problem-content, .problem-content-container {
-            background: #1e293b !important;
-            color: #e2e8f0 !important;
+        /* 按钮修正 */
+        #theme-toggle-btn {
+            filter: invert(1) hue-rotate(180deg) !important;
         }
     `;
 
-    // 逻辑：应用主题
+    // 应用主题
     function applyTheme() {
+        document.documentElement.classList.add('luogu-dark-mode');
         if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
             style.id = styleId;
             style.textContent = css;
-            (document.head || document.documentElement).appendChild(style);
+            document.documentElement.appendChild(style);
         }
     }
 
-    // 逻辑：移除主题
-    function removeTheme() {
-        const style = document.getElementById(styleId);
-        if (style) style.remove();
-    }
+    // 状态初始化
+    const isDark = (localStorage.getItem('luogu-theme-status') || 'dark') === 'dark';
+    if (isDark) applyTheme();
 
-    // 初始化状态检查
-    const currentTheme = localStorage.getItem('luogu-theme-status') || 'dark';
-    if (currentTheme === 'dark') {
-        applyTheme();
-    }
-
-    // 创建切换按钮 (在 DOMContentLoaded 之后执行)
-    function createBtn() {
+    // 按钮逻辑
+    function initUI() {
         const btn = document.createElement('div');
+        btn.id = 'theme-toggle-btn';
         btn.innerHTML = localStorage.getItem('luogu-theme-status') === 'light' ? '🌞' : '🌙';
+        
         Object.assign(btn.style, {
-            position: 'fixed', bottom: '20px', left: '20px',
-            width: '40px', height: '40px', background: '#3b82f6',
-            color: 'white', borderRadius: '50%', textAlign: 'center',
-            lineHeight: '40px', cursor: 'pointer', zIndex: '99999',
-            fontSize: '20px'
+            position: 'fixed', bottom: '30px', left: '30px',
+            width: '45px', height: '45px', borderRadius: '50%',
+            backgroundColor: '#3b82f6', color: 'white', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: '999999', fontSize: '24px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
         });
 
         btn.onclick = () => {
-            const status = localStorage.getItem('luogu-theme-status') || 'dark';
-            if (status === 'dark') {
-                removeTheme();
+            const wasDark = document.documentElement.classList.contains('luogu-dark-mode');
+            if (wasDark) {
+                document.documentElement.classList.remove('luogu-dark-mode');
                 localStorage.setItem('luogu-theme-status', 'light');
                 btn.innerHTML = '🌞';
             } else {
@@ -112,11 +98,7 @@
         document.body.appendChild(btn);
     }
 
-    // 确保按钮能加载出来
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        createBtn();
-    } else {
-        document.addEventListener('DOMContentLoaded', createBtn);
-    }
+    if (document.readyState === 'complete') initUI();
+    else document.addEventListener('DOMContentLoaded', initUI);
 
 })();
