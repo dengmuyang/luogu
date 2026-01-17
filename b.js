@@ -1,15 +1,13 @@
 // ==UserScript==
-// @name         洛谷超级主题引擎
+// @name         洛谷主页深色主题
 // @namespace    https://github.com/dengmuyang/luogu
-// @version      3.0.0
-// @description  深度覆盖洛谷所有元素的主题系统，支持强制样式覆盖
+// @version      1.0.0
+// @description  专门为洛谷主页设计的深色主题
 // @author       dengmuyang
-// @match        https://www.luogu.com.cn/*
+// @match        https://www.luogu.com.cn/
+// @match        https://www.luogu.com.cn
 // @icon         https://www.luogu.com.cn/favicon.ico
-// @grant        GM_getValue
-// @grant        GM_setValue
 // @grant        GM_addStyle
-// @grant        unsafeWindow
 // @run-at       document-start
 // @license      MIT
 // ==/UserScript==
@@ -17,595 +15,451 @@
 (function() {
     'use strict';
     
-    // 超级主题引擎
-    class SuperThemeEngine {
-        constructor() {
-            this.themes = this.getAllThemes();
-            this.currentTheme = GM_getValue('luogu_super_theme', 'deep-dark');
-            this.forceOverride = GM_getValue('luogu_force_override', true);
-            this.init();
+    // 根据你的截图精准定位的CSS
+    const css = `
+        /* === 全局重置 === */
+        body {
+            background-color: #0f172a !important;
+            color: #e2e8f0 !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
         
-        getAllThemes() {
-            return {
-                'deep-dark': {
-                    name: '深度深色',
-                    type: 'dark',
-                    priority: 9999,
-                    css: this.generateDeepDarkCSS()
-                },
-                'midnight-purple': {
-                    name: '午夜紫',
-                    type: 'dark', 
-                    priority: 9999,
-                    css: this.generateMidnightPurpleCSS()
-                },
-                'oled-black': {
-                    name: 'OLED纯黑',
-                    type: 'dark',
-                    priority: 9999,
-                    css: this.generateOLEDBlackCSS()
-                },
-                'light-pro': {
-                    name: '专业浅色',
-                    type: 'light',
-                    priority: 9999,
-                    css: this.generateLightProCSS()
-                },
-                'github-dark': {
-                    name: 'GitHub深色',
-                    type: 'dark',
-                    priority: 9999,
-                    css: this.generateGitHubDarkCSS()
-                },
-                'matrix-green': {
-                    name: '矩阵绿',
-                    type: 'dark',
-                    priority: 9999,
-                    css: this.generateMatrixGreenCSS()
-                }
-            };
+        /* === 头部区域 === */
+        .header, 
+        .am-topbar,
+        .lfe-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+            border-bottom: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
         }
         
-        generateDeepDarkCSS() {
-            return `
-                /* 深度深色主题 - 强制覆盖 */
-                * {
-                    transition: background-color 0.3s, color 0.3s, border-color 0.3s !important;
-                }
-                
-                /* 强制重置所有背景 */
-                body, div, section, article, main, header, footer,
-                .am-g, .am-container, .am-topbar, .am-panel,
-                .card, .panel, .section, .wrapper,
-                .problem-sidebar, .record-panel, .lg-content,
-                .am-u-sm-12, .am-u-md-6, .am-u-lg-4,
-                .am-form, .am-table, .am-btn-group {
-                    background-color: #0a0a0a !important;
-                    color: #e0e0e0 !important;
-                }
-                
-                /* 卡片层级 */
-                .card, .am-panel, .panel {
-                    background-color: #1a1a1a !important;
-                    border-color: #2a2a2a !important;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-                }
-                
-                /* 头部区域 */
-                .header, .top-nav, .am-topbar,
-                .lg-header, .nav, .navbar {
-                    background-color: #111 !important;
-                    border-bottom-color: #333 !important;
-                }
-                
-                /* 文字和链接 */
-                h1, h2, h3, h4, h5, h6,
-                p, span, li, td, th {
-                    color: #e0e0e0 !important;
-                }
-                
-                a, .am-link, .problem-title a,
-                .user-name a, .comment-author a {
-                    color: #64b5f6 !important;
-                    text-decoration: none !important;
-                }
-                
-                a:hover {
-                    color: #90caf9 !important;
-                    text-decoration: underline !important;
-                }
-                
-                /* 按钮 */
-                .am-btn, button, .btn,
-                .am-btn-primary, .primary-btn,
-                input[type="submit"], input[type="button"] {
-                    background: linear-gradient(135deg, #667eea, #764ba2) !important;
-                    color: white !important;
-                    border: none !important;
-                    border-radius: 6px !important;
-                    padding: 8px 16px !important;
-                    font-weight: 500 !important;
-                }
-                
-                .am-btn-default {
-                    background: #2a2a2a !important;
-                    color: #e0e0e0 !important;
-                    border-color: #444 !important;
-                }
-                
-                /* 输入框 */
-                input, textarea, select,
-                .am-form-field, .search-input {
-                    background-color: #1a1a1a !important;
-                    color: #e0e0e0 !important;
-                    border-color: #444 !important;
-                    border-radius: 4px !important;
-                    padding: 8px 12px !important;
-                }
-                
-                /* 代码区域 */
-                pre, code, .highlight,
-                .code-block, .source-code {
-                    background-color: #121212 !important;
-                    color: #f8f8f2 !important;
-                    border-color: #333 !important;
-                }
-                
-                /* 编辑器 */
-                .monaco-editor, .code-editor,
-                .input-wrapper, textarea.code {
-                    background-color: #1e1e1e !important;
-                }
-                
-                /* 表格 */
-                table, .am-table {
-                    background-color: #1a1a1a !important;
-                }
-                
-                .am-table-bordered td,
-                .am-table-bordered th {
-                    border-color: #333 !important;
-                }
-                
-                /* 难度标签 */
-                .difficulty-tag, .tag,
-                .am-badge, .label {
-                    background-color: #333 !important;
-                    color: #fff !important;
-                    border-radius: 12px !important;
-                    padding: 2px 8px !important;
-                }
-                
-                /* 滚动条 */
-                ::-webkit-scrollbar {
-                    width: 12px;
-                    height: 12px;
-                }
-                
-                ::-webkit-scrollbar-track {
-                    background: #111;
-                }
-                
-                ::-webkit-scrollbar-thumb {
-                    background: #444;
-                    border-radius: 6px;
-                    border: 2px solid #111;
-                }
-                
-                ::-webkit-scrollbar-thumb:hover {
-                    background: #555;
-                }
-                
-                /* 特殊元素 - 针对你的截图 */
-                /* 运势卡片 */
-                .user-card, .profile-card {
-                    background: linear-gradient(135deg, #1a237e, #311b92) !important;
-                    color: white !important;
-                }
-                
-                /* 比赛列表 */
-                .contest-item, .event-card {
-                    background: #1a1a1a !important;
-                    border-left: 4px solid #667eea !important;
-                }
-                
-                /* 公告区域 */
-                .announcement, .notice {
-                    background: #1b5e20 !important;
-                    color: #c8e6c9 !important;
-                }
-                
-                /* 搜索框 */
-                .search-box {
-                    background: #1a1a1a !important;
-                    border: 2px solid #667eea !important;
-                }
-                
-                /* 图片优化 */
-                img {
-                    filter: brightness(0.9) contrast(1.1);
-                }
-                
-                /* 响应式优化 */
-                @media (max-width: 768px) {
-                    body {
-                        font-size: 14px;
-                    }
-                }
-            `;
+        /* 导航链接 */
+        .header a,
+        .am-topbar a,
+        .nav-link,
+        .am-nav > li > a {
+            color: #94a3b8 !important;
         }
         
-        generateMidnightPurpleCSS() {
-            return `
-                /* 午夜紫主题 */
-                body, .wrapper, .main-container {
-                    background: linear-gradient(135deg, #0c0c1d, #1a0b2e) !important;
-                    color: #d8c7ff !important;
-                }
-                
-                .card, .panel {
-                    background: rgba(30, 15, 60, 0.9) !important;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid #4a2c8c !important;
-                }
-                
-                .am-btn-primary {
-                    background: linear-gradient(135deg, #8a2be2, #4b0082) !important;
-                }
-            `;
+        .header a:hover,
+        .am-topbar a:hover {
+            color: #cbd5e1 !important;
         }
         
-        generateOLEDBlackCSS() {
-            return `
-                /* OLED纯黑主题 - 省电模式 */
-                body, div, section, .card {
-                    background-color: #000000 !important;
-                    color: #ffffff !important;
-                }
-                
-                .card, .panel {
-                    background-color: #111111 !important;
-                    border-color: #222222 !important;
-                }
-            `;
+        /* === 主要内容区域 === */
+        .am-container,
+        .main-container,
+        .wrapper {
+            background-color: #0f172a !important;
         }
         
-        generateLightProCSS() {
-            return `
-                /* 专业浅色主题 */
-                body {
-                    background-color: #f8fafc !important;
-                    color: #1e293b !important;
-                }
-                
-                .card, .panel {
-                    background: white !important;
-                    border: 1px solid #e2e8f0 !important;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
-                }
-                
-                .am-btn-primary {
-                    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
-                }
-                
-                a {
-                    color: #2563eb !important;
-                }
-            `;
+        /* === 卡片样式 === */
+        .card,
+        .am-panel,
+        .panel,
+        .section {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+            color: #e2e8f0 !important;
+            margin-bottom: 20px !important;
+            overflow: hidden !important;
         }
         
-        init() {
-            // 立即注入基础样式防止闪烁
-            this.injectBaseStyle();
+        /* 卡片标题 */
+        .card h2,
+        .card h3,
+        .card h4,
+        .am-panel-hd,
+        .panel-heading {
+            background: linear-gradient(135deg, #334155 0%, #475569 100%) !important;
+            color: #f1f5f9 !important;
+            padding: 15px 20px !important;
+            margin: 0 !important;
+            border-bottom: 1px solid #475569 !important;
+        }
+        
+        /* 卡片内容 */
+        .card-body,
+        .am-panel-bd,
+        .panel-body {
+            padding: 20px !important;
+        }
+        
+        /* === 运势卡片 === */
+        .user-card,
+        .profile-card,
+        .lucky-card {
+            background: linear-gradient(135deg, #3730a3 0%, #5b21b6 100%) !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 10px 25px rgba(91, 33, 182, 0.3) !important;
+        }
+        
+        /* 运势标题 */
+        .user-card h4,
+        .lucky-card h4 {
+            color: #c7d2fe !important;
+            font-size: 16px !important;
+        }
+        
+        /* 运势内容 */
+        .lucky-content {
+            color: #e9d5ff !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+        }
+        
+        /* 宜/忌列表 */
+        .lucky-item {
+            background: rgba(255, 255, 255, 0.1) !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            margin: 5px 0 !important;
+        }
+        
+        /* === 比赛列表 === */
+        .contest-list,
+        .event-list {
+            background: transparent !important;
+        }
+        
+        .contest-item,
+        .event-item {
+            background: #1e293b !important;
+            border-left: 4px solid #3b82f6 !important;
+            margin-bottom: 12px !important;
+            padding: 15px !important;
+            border-radius: 8px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .contest-item:hover,
+        .event-item:hover {
+            background: #334155 !important;
+            transform: translateX(5px) !important;
+        }
+        
+        /* 比赛标题 */
+        .contest-title {
+            color: #60a5fa !important;
+            font-weight: 600 !important;
+            font-size: 16px !important;
+        }
+        
+        /* 比赛信息 */
+        .contest-info,
+        .event-info {
+            color: #94a3b8 !important;
+            font-size: 14px !important;
+            margin-top: 5px !important;
+        }
+        
+        /* Rated标签 */
+        .rated-tag {
+            background: #10b981 !important;
+            color: white !important;
+            padding: 2px 8px !important;
+            border-radius: 12px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+        }
+        
+        /* === 教材推广区域 === */
+        .book-promo,
+        .promotion-card {
+            background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+            color: white !important;
+            border: none !important;
+        }
+        
+        .book-title {
+            color: #a7f3d0 !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+        }
+        
+        .book-subtitle {
+            color: #d1fae5 !important;
+            font-size: 14px !important;
+        }
+        
+        /* === 搜索框 === */
+        .search-box,
+        .search-container {
+            background: #1e293b !important;
+            border: 2px solid #3b82f6 !important;
+            border-radius: 25px !important;
+            padding: 10px 20px !important;
+        }
+        
+        .search-input {
+            background: transparent !important;
+            color: #e2e8f0 !important;
+            border: none !important;
+            outline: none !important;
+            font-size: 16px !important;
+            width: 100% !important;
+        }
+        
+        .search-input::placeholder {
+            color: #94a3b8 !important;
+        }
+        
+        .search-button {
+            background: #3b82f6 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 20px !important;
+            padding: 8px 20px !important;
+            cursor: pointer !important;
+            font-weight: 600 !important;
+        }
+        
+        /* === 按钮 === */
+        .am-btn,
+        button,
+        .btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 10px 20px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .am-btn:hover,
+        button:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+        }
+        
+        .am-btn-default {
+            background: #334155 !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #475569 !important;
+        }
+        
+        /* === 链接 === */
+        a {
+            color: #60a5fa !important;
+            text-decoration: none !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        a:hover {
+            color: #93c5fd !important;
+            text-decoration: underline !important;
+        }
+        
+        /* === 列表 === */
+        ul, ol {
+            color: #cbd5e1 !important;
+        }
+        
+        li {
+            margin-bottom: 8px !important;
+            line-height: 1.6 !important;
+        }
+        
+        /* === 公告区域 === */
+        .announcement,
+        .notice {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+        }
+        
+        .announcement-title {
+            color: #ddd6fe !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+        }
+        
+        .announcement-content {
+            color: #f5f3ff !important;
+            font-size: 14px !important;
+        }
+        
+        /* === 分隔线 === */
+        hr {
+            border-color: #475569 !important;
+            margin: 30px 0 !important;
+        }
+        
+        /* === 网格布局 === */
+        .am-g,
+        .row {
+            margin-left: -10px !important;
+            margin-right: -10px !important;
+        }
+        
+        .am-u-*,
+        .col-* {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+        }
+        
+        /* === 页脚 === */
+        .footer,
+        .lfe-footer {
+            background: #1e293b !important;
+            color: #94a3b8 !important;
+            border-top: 1px solid #334155 !important;
+            padding: 30px 0 !important;
+            margin-top: 50px !important;
+        }
+        
+        /* === 响应式调整 === */
+        @media (max-width: 768px) {
+            .card, .am-panel {
+                border-radius: 10px !important;
+                margin-bottom: 15px !important;
+            }
             
-            // 应用主题
-            this.applyTheme(this.currentTheme);
-            
-            // 创建控制界面
-            this.createSuperControlPanel();
-            
-            // 监听页面变化
-            this.observeAndOverride();
-            
-            // 增强强制覆盖
-            if (this.forceOverride) {
-                this.enhanceOverride();
+            .card-body, .am-panel-bd {
+                padding: 15px !important;
             }
         }
         
-        injectBaseStyle() {
-            // 立即注入一个基础样式防止页面闪烁
-            const baseStyle = document.createElement('style');
-            baseStyle.id = 'luogu-base-theme';
-            baseStyle.textContent = `
-                body {
-                    visibility: hidden !important;
-                }
-                
-                body.theme-loaded {
-                    visibility: visible !important;
-                    transition: opacity 0.5s ease !important;
-                }
-            `;
-            document.head.appendChild(baseStyle);
+        /* === 滚动条美化 === */
+        ::-webkit-scrollbar {
+            width: 10px !important;
+            height: 10px !important;
         }
         
-        applyTheme(themeName) {
-            const theme = this.themes[themeName];
-            if (!theme) return;
-            
-            // 移除旧主题
-            const oldStyle = document.getElementById('luogu-super-theme');
-            if (oldStyle) oldStyle.remove();
-            
-            // 添加新主题
-            const style = document.createElement('style');
-            style.id = 'luogu-super-theme';
-            style.setAttribute('data-theme', themeName);
-            style.setAttribute('data-priority', theme.priority);
-            style.textContent = theme.css;
-            
-            // 插入到最前面确保覆盖
-            document.head.insertBefore(style, document.head.firstChild);
-            
-            // 保存设置
-            this.currentTheme = themeName;
-            GM_setValue('luogu_super_theme', themeName);
-            
-            // 标记页面已加载主题
-            setTimeout(() => {
-                document.body.classList.add('theme-loaded');
-            }, 100);
-            
-            console.log(`应用主题: ${theme.name}`);
+        ::-webkit-scrollbar-track {
+            background: #1e293b !important;
         }
         
-        createSuperControlPanel() {
-            // 创建迷你控制条（更隐蔽）
-            const controlBar = document.createElement('div');
-            controlBar.id = 'luogu-mini-control';
-            
-            controlBar.innerHTML = `
-                <div class="mini-theme-switcher">
-                    <select id="mini-theme-select">
-                        ${Object.entries(this.themes).map(([id, theme]) => 
-                            `<option value="${id}" ${id === this.currentTheme ? 'selected' : ''}>
-                                ${theme.name}
-                            </option>`
-                        ).join('')}
-                    </select>
-                    <button id="mini-settings-btn" title="主题设置">⚙️</button>
-                    <button id="mini-toggle-btn" title="切换主题">🎨</button>
-                </div>
-            `;
-            
-            GM_addStyle(`
-                #luogu-mini-control {
-                    position: fixed;
-                    bottom: 10px;
-                    right: 10px;
-                    z-index: 10000;
-                    background: rgba(0, 0, 0, 0.8);
-                    backdrop-filter: blur(10px);
-                    border-radius: 20px;
-                    padding: 5px 10px;
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                    transition: all 0.3s ease;
-                }
-                
-                #luogu-mini-control:hover {
-                    background: rgba(0, 0, 0, 0.9);
-                    transform: translateY(-2px);
-                }
-                
-                .mini-theme-switcher {
-                    display: flex;
-                    gap: 5px;
-                    align-items: center;
-                }
-                
-                #mini-theme-select {
-                    background: rgba(255, 255, 255, 0.1);
-                    color: white;
-                    border: none;
-                    border-radius: 10px;
-                    padding: 5px 10px;
-                    font-size: 12px;
-                    max-width: 120px;
-                    cursor: pointer;
-                }
-                
-                #mini-settings-btn,
-                #mini-toggle-btn {
-                    background: rgba(255, 255, 255, 0.1);
-                    color: white;
-                    border: none;
-                    width: 30px;
-                    height: 30px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 14px;
-                }
-                
-                #mini-settings-btn:hover,
-                #mini-toggle-btn:hover {
-                    background: rgba(255, 255, 255, 0.2);
-                }
-            `);
-            
-            document.body.appendChild(controlBar);
-            
-            // 绑定事件
-            document.getElementById('mini-theme-select').addEventListener('change', (e) => {
-                this.applyTheme(e.target.value);
-            });
-            
-            document.getElementById('mini-toggle-btn').addEventListener('click', () => {
-                const themes = Object.keys(this.themes);
-                const currentIndex = themes.indexOf(this.currentTheme);
-                const nextIndex = (currentIndex + 1) % themes.length;
-                this.applyTheme(themes[nextIndex]);
-                document.getElementById('mini-theme-select').value = themes[nextIndex];
-            });
-            
-            document.getElementById('mini-settings-btn').addEventListener('click', () => {
-                this.showAdvancedSettings();
-            });
+        ::-webkit-scrollbar-thumb {
+            background: #475569 !important;
+            border-radius: 5px !important;
         }
         
-        showAdvancedSettings() {
-            // 简单设置面板
-            const settings = `
-                <div style="
-                    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                    background: rgba(0, 0, 0, 0.95); color: white; padding: 20px;
-                    border-radius: 15px; z-index: 10001; min-width: 300px;
-                    border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);
-                ">
-                    <h3 style="margin-top: 0;">🎨 主题高级设置</h3>
-                    
-                    <label style="display: block; margin: 10px 0;">
-                        <input type="checkbox" id="force-override" ${this.forceOverride ? 'checked' : ''}>
-                        强制样式覆盖（修复主题不生效）
-                    </label>
-                    
-                    <label style="display: block; margin: 10px 0;">
-                        <input type="checkbox" id="auto-dark-mode" checked>
-                        跟随系统深色模式
-                    </label>
-                    
-                    <label style="display: block; margin: 10px 0;">
-                        <input type="checkbox" id="smooth-transitions" checked>
-                        平滑过渡动画
-                    </label>
-                    
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button id="save-settings" style="
-                            background: #667eea; color: white; border: none;
-                            padding: 10px 20px; border-radius: 8px; cursor: pointer;
-                        ">保存设置</button>
-                        <button id="close-settings" style="
-                            background: transparent; color: #999; border: 1px solid #666;
-                            padding: 10px 20px; border-radius: 8px; cursor: pointer;
-                        ">关闭</button>
-                    </div>
-                </div>
-            `;
-            
-            const overlay = document.createElement('div');
-            overlay.id = 'luogu-settings-overlay';
-            overlay.innerHTML = settings;
-            
-            // 点击外部关闭
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 10000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
-            
-            document.body.appendChild(overlay);
-            
-            // 绑定事件
-            document.getElementById('save-settings').addEventListener('click', () => {
-                this.forceOverride = document.getElementById('force-override').checked;
-                GM_setValue('luogu_force_override', this.forceOverride);
-                
-                if (this.forceOverride) {
-                    this.enhanceOverride();
-                }
-                
-                overlay.remove();
-            });
-            
-            document.getElementById('close-settings').addEventListener('click', () => {
-                overlay.remove();
-            });
-            
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.remove();
-                }
-            });
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b !important;
         }
         
-        observeAndOverride() {
-            // 持续监控并覆盖新元素
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.addedNodes.length > 0) {
-                        // 延迟执行确保DOM完全加载
-                        setTimeout(() => {
-                            this.applyTheme(this.currentTheme);
-                        }, 100);
-                    }
-                });
-            });
-            
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+        /* === 强制覆盖内联样式 === */
+        [style*="background-color"]:not(.exclude-theme),
+        [style*="background"]:not(.exclude-theme) {
+            background-color: inherit !important;
+            background: inherit !important;
         }
         
-        enhanceOverride() {
-            // 增强强制覆盖：使用更具体的选择器
-            const enhancedCSS = `
-                /* 增强覆盖 - 使用!important和具体选择器 */
-                body * {
-                    background-color: inherit !important;
-                    color: inherit !important;
-                }
-                
-                /* 针对常见框架类名 */
-                [class*="am-"], [class*="lg-"], [class*="luogu-"] {
-                    background-color: inherit !important;
-                    color: inherit !important;
-                }
-                
-                /* 内联样式覆盖 */
-                [style] {
-                    background-color: inherit !important;
-                    color: inherit !important;
-                    border-color: inherit !important;
-                }
-            `;
-            
-            const style = document.createElement('style');
-            style.id = 'luogu-force-override';
-            style.textContent = enhancedCSS;
-            document.head.appendChild(style);
+        [style*="color"]:not(.exclude-theme) {
+            color: inherit !important;
         }
+    `;
+    
+    // 立即注入CSS
+    function injectTheme() {
+        // 移除可能存在的旧样式
+        const oldStyle = document.getElementById('luogu-home-theme');
+        if (oldStyle) oldStyle.remove();
+        
+        // 创建新样式
+        const style = document.createElement('style');
+        style.id = 'luogu-home-theme';
+        style.textContent = css;
+        
+        // 插入到head最前面
+        document.head.insertBefore(style, document.head.firstChild);
+        
+        console.log('洛谷主页主题已应用');
+        
+        // 添加主题标记
+        document.body.classList.add('luogu-dark-home');
     }
     
-    // 立即启动
+    // 等待DOM加载
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            new SuperThemeEngine();
-        });
+        document.addEventListener('DOMContentLoaded', injectTheme);
     } else {
-        new SuperThemeEngine();
+        injectTheme();
     }
     
-    // 添加一个全局函数方便调试
-    unsafeWindow.luoguTheme = {
-        reload: () => new SuperThemeEngine(),
-        getCurrentTheme: () => GM_getValue('luogu_super_theme', 'deep-dark'),
-        setTheme: (name) => {
-            const engine = new SuperThemeEngine();
-            engine.applyTheme(name);
+    // 监听动态内容加载
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length > 0) {
+                // 重新注入以确保新内容被样式化
+                setTimeout(injectTheme, 100);
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // 创建一个简单的主题切换按钮
+    function createThemeToggle() {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.innerHTML = '🌙';
+        toggleBtn.title = '切换主题';
+        
+        Object.assign(toggleBtn.style, {
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '24px',
+            zIndex: '9999',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)',
+            transition: 'all 0.3s ease'
+        });
+        
+        toggleBtn.addEventListener('mouseenter', () => {
+            toggleBtn.style.transform = 'scale(1.1)';
+            toggleBtn.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.4)';
+        });
+        
+        toggleBtn.addEventListener('mouseleave', () => {
+            toggleBtn.style.transform = 'scale(1)';
+        });
+        
+        toggleBtn.addEventListener('click', () => {
+            const isDark = document.body.classList.contains('luogu-dark-home');
+            
+            if (isDark) {
+                // 切换到浅色主题
+                document.getElementById('luogu-home-theme').remove();
+                document.body.classList.remove('luogu-dark-home');
+                toggleBtn.innerHTML = '🌞';
+                localStorage.setItem('luogu-home-theme', 'light');
+            } else {
+                // 切换到深色主题
+                injectTheme();
+                toggleBtn.innerHTML = '🌙';
+                localStorage.setItem('luogu-home-theme', 'dark');
+            }
+        });
+        
+        // 检查本地存储的主题偏好
+        const savedTheme = localStorage.getItem('luogu-home-theme');
+        if (savedTheme === 'light') {
+            toggleBtn.innerHTML = '🌞';
         }
-    };
+        
+        document.body.appendChild(toggleBtn);
+    }
+    
+    // 添加切换按钮
+    setTimeout(createThemeToggle, 2000);
     
 })();
