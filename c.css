@@ -1,0 +1,35 @@
+/* 美化代码编辑器 */
+.luogu-code-editor-enhancement .monaco-editor {
+  border-radius: 8px;
+  border: 2px solid #ddd;
+}
+
+/* 行号样式 */
+.luogu-code-editor-enhancement .margin {
+  background-color: #f8f9fa;
+}
+
+/* 高亮当前行 */
+.luogu-code-editor-enhancement .current-line {
+  border: 2px solid #3498db !important;
+}
+
+/* 美化滚动条 */
+.luogu-code-editor-enhancement ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.luogu-code-editor-enhancement ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+.luogu-code-editor-enhancement ::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+.luogu-code-editor-enhancement ::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
